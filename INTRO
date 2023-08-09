@@ -1,0 +1,3 @@
+## main.py contains the main file for the program
+## board.py contains the class cell and class board for the program
+## sudoku_generator.py is my sudoku generator program, the remaining is for the assignment
