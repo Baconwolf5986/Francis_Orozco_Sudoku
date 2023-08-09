@@ -1,4 +1,7 @@
-import math, random
+# COP3502 Project 4
+# Sudoku Generator Class
+
+import random
 class SudokuGenerator:
 
     def __init__(self, row_length, removed_cells):

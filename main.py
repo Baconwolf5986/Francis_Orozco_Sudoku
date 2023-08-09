@@ -1,3 +1,6 @@
+# COP3502 Project 4
+# Sudoku Program
+
 import pygame, sys
 from board import board
 
@@ -7,8 +10,7 @@ pygame.init()
 pygame.display.set_caption('Sudoku')
 screen = pygame.display.set_mode((900, 600))
 
-# Initializ fonts for buttons and text
-number_font = pygame.font.Font(None, 20)
+# Initialize fonts for buttons and text
 game_over_font = pygame.font.Font(None, 50)
 button_font = pygame.font.Font(None, 36)
 
@@ -25,6 +27,8 @@ hard_button = 500
 
 # Initialize variables for the screen displays
 # When the button text is TRUE, the button is clickable
+cell_size = 550//9
+entering_value = False
 game_board = None
 difficulty_selected = False
 game_over = False
@@ -64,7 +68,8 @@ while True:
             screen.blit(hard_button_text, (hard_button+40, button_y + 20))
 
             # If a button is clicked, create a board depending on difficulty
-            # Turn the buttons off and advance to next screen
+            # Turn the buttons off, and turn the restart, reset and exit buttons on
+            # and advance to next screen
 
             if event.type == pygame.MOUSEBUTTONDOWN:
                 mx, my = event.pos
@@ -74,23 +79,33 @@ while True:
                     buttons_clickable['easy'] = False
                     buttons_clickable['medium'] = False
                     buttons_clickable['hard'] = False
+                    buttons_clickable['reset'] = True
+                    buttons_clickable['restart'] = True
+                    buttons_clickable['exit'] = True
                 elif buttons_clickable['medium'] and medium_button <= mx <= medium_button + button_width and button_y <= my <= button_y + button_height:
                     difficulty = 'Medium'
                     game_board = board(550, 550, screen, difficulty)
                     buttons_clickable['easy'] = False
                     buttons_clickable['medium'] = False
                     buttons_clickable['hard'] = False
+                    buttons_clickable['reset'] = True
+                    buttons_clickable['restart'] = True
+                    buttons_clickable['exit'] = True
                 elif buttons_clickable['hard'] and hard_button <= mx <= hard_button + button_width and button_y <= my <= button_y + button_height:
                     difficulty = 'Hard'
                     game_board = board(550, 550, screen, difficulty)
                     buttons_clickable['easy'] = False
                     buttons_clickable['medium'] = False
                     buttons_clickable['hard'] = False
+                    buttons_clickable['reset'] = True
+                    buttons_clickable['restart'] = True
+                    buttons_clickable['exit'] = True
 
         # When a board is created, display the board and new buttons
-        # Hide all old old buttons
+        # Hide old buttons
 
         if game_board is not None and not game_board.check_board():
+            # Clear the board, render buttons and sudoku board
             screen.fill((255,255,255))
             game_board.draw()
             reset_button_text = button_font.render("Reset", True, (0, 0, 0))
@@ -102,6 +117,8 @@ while True:
             screen.blit(reset_button_text, (710, 210))
             screen.blit(restart_button_text, (710, 310))
             screen.blit(exit_button_text, (710, 410))
+
+            # Event handling for clicking on the buttons
             if event.type == pygame.MOUSEBUTTONDOWN:
                 mx, my = event.pos
                 if buttons_clickable['reset'] and 700 <= mx <= 700 + button_width and 200 <= my <= 200 + button_height:
@@ -113,8 +130,11 @@ while True:
                     buttons_clickable['easy'] = True
                     buttons_clickable['medium'] = True
                     buttons_clickable['hard'] = True
-                elif buttons_clickable['restart'] and 700 <= mx <= 700 + button_width and 400 <= my <= 400 + button_height:
+                elif buttons_clickable['exit'] and 700 <= mx <= 700 + button_width and 400 <= my <= 400 + button_height:
                     pygame.quit()
+
+                # If a button is not clicked, check if a cell is clicked
+                # If it is select that cell
                 else:
                     clicked_row, clicked_col = game_board.click(mx, my)
                     if clicked_row is not None and clicked_col is not None:
@@ -135,9 +155,14 @@ while True:
                         number_input = event.key - pygame.K_0
                         game_board.update_board(number_input)
                         game_board.draw()
+                    # Lock in number when pressing enter
+                    elif event.key == pygame.K_RETURN:
+                        game_board.place_number()
+
 
                     # Arrow key input move to the cells, check if the cell is an initial cell,
                     # or if it's within the range.
+                    # If you use an arrow key towards an edge or initial cell, find an empty cell
 
                     if event.key == pygame.K_LEFT:
                         if game_board.selected_cell[1] > 0:
@@ -182,6 +207,7 @@ while True:
                 game_over = True
                 game_result = 'YOU WIN!'
 
+        # Rendering for win and loss screens
         if not game_over:
             pass
         else:

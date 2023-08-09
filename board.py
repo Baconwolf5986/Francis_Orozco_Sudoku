@@ -1,6 +1,11 @@
+# COP3502 Project 4
+# Class file
+
 import pygame, copy
 from sudoku_generator import SudokuGenerator
 
+# CELL CLASS
+########
 class cell:
     def __init__(self, value, row, col, screen):
         self.value = value
@@ -10,43 +15,48 @@ class cell:
         self.cell_size = 550 // 9
         self.sketched_value = 0
 
-    def set_cell_value(self, value):
-        self.value = value
-
-    def set_sketched_value(self, value):
-        self.sketched_value = value
-
-    def draw(self, is_initial, is_selected):
+    def draw(self, is_initial, is_selected, is_locked):
         # Draw the cell, along with the value inside of it
         # If the value is 0 draw nothing inside the cell
         width = self.col * self.cell_size + 10
         height = self.row * self.cell_size + 10
 
-        pygame.draw.rect(self.screen, (255,255,255), (width, height, self.cell_size, self.cell_size))
+        # Render the number values of the cells
+        # If a cell is selected, highlight it
+        # If a number is an initial value, make it black
+        # If a number is a locked number, make it blue
+        # If it's a 'sketched' number, make it grey
         font = pygame.font.Font(None, 40)
         if is_selected:
             pygame.draw.rect(self.screen, (0, 0, 255), (width, height, self.cell_size,self.cell_size), 3)
         if self.value != 0:
             if is_initial:
                 text_color = (0,0,0)
-            else:
+                val_text = font.render(str(self.value), True, text_color)
+                text_rect = val_text.get_rect(center=(width + self.cell_size // 2, height + self.cell_size // 2))
+                self.screen.blit(val_text, text_rect)
+            elif is_locked:
                 text_color = (100,100,200)
-            val_text = font.render(str(self.value), True, text_color)
-            text_rect = val_text.get_rect(center=(width + self.cell_size // 2, height + self.cell_size // 2))
-            self.screen.blit(val_text, text_rect)
+                val_text = font.render(str(self.value), True, text_color)
+                text_rect = val_text.get_rect(center=(width + self.cell_size // 2, height + self.cell_size // 2))
+                self.screen.blit(val_text, text_rect)
+            else:
+                text_color = (170, 170, 170)
+                val_text = font.render(str(self.value), True, text_color)
+                text_rect = val_text.get_rect(topleft=(width + self.cell_size // 2, height + self.cell_size // 2))
+                self.screen.blit(val_text, text_rect)
 
-        if self.sketched_value != 0:
-            font = pygame.font.Font(None, 20)
-            val_text = font.render(str(self.sketched_value), True, (0, 0, 0))
-            text_rect = val_text.get_rect(topleft=(width + 5, height + 5))
-            self.screen.blit(val_text, text_rect)
+
+# BOARD CLASS
+#############
 class board:
 
     # Initialize the board object
     # The cell size will be 1/9 of the height (or width, it should be the same)
     # Difficulty will determine the number of cells removed
-    # Create 3 boards
+    # Create 4 boards
     # Board: The game board that will be updated by the user
+    # Locked: The game board that includes values locked in by the user
     # Initial: The initial board that can be used to reset the game board
     # Solved: The board with no zero values, to check if the game board is solved
 
@@ -70,14 +80,8 @@ class board:
         self.solved = solved
         self.board = board
         self.initial = copy.deepcopy(board)
+        self.locked = copy.deepcopy(board)
         self.selected_cell = None
-        self.cells = []
-        for row in range(len(self.board)):
-            row_cells = []
-            for num in range(len(self.board[row])):
-                cell_obj = cell(self.board[row][num], row, num, self.screen)
-                row_cells.append(cell_obj)
-            self.cells.append(row_cells)
 
     def draw(self):
         board_size = 550
@@ -91,7 +95,8 @@ class board:
                 board_cell = cell(self.board[row][num],row,num,self.screen)
                 is_initial = self.initial[row][num] != 0
                 is_selected = (row, num) == self.selected_cell
-                board_cell.draw(is_initial, is_selected)
+                is_locked = self.board[row][num] == self.locked[row][num]
+                board_cell.draw(is_initial, is_selected, is_locked)
 
         # Draw the board gridlines using the cell size of the board
         for i in range(board_y, board_y + board_size, cell_size):
@@ -110,19 +115,12 @@ class board:
         self.selected_cell = (row, col)
         return row, col
 
-    def sketch(self, value):
-        # Set the sketched value of the cell to be equal to the user input
-        if self.selected_cell:
-            row, col = self.selected_cell
-            self.board[row][col].set_sketched_value(value)
-
-    def place_number(self, value):
+    def place_number(self):
         # Sets the value of the current cell to be user entered value
         # called using enter key
         if self.selected_cell:
             row, col = self.selected_cell
-            self.cells[row][col].set_cell_value(value)
-            self.draw()
+            self.locked[row][col] = self.board[row][col]
 
     def reset_to_original(self):
         # Reset all cells in the board to their original values (0 if cleared)
@@ -130,10 +128,10 @@ class board:
         self.board = copy.deepcopy(self.initial)
 
     def is_full(self):
-        # Checks if the board has any empty values (0)
+        # Checks if the locked in board has any empty values (0)
         for row in range(len(self.board)):
             for col in range(len(self.board[row])):
-                if self.board[row][col] == 0:
+                if self.locked[row][col] == 0:
                     return False
         return True
 
@@ -152,7 +150,7 @@ class board:
         return None
 
     def check_board(self):
-        # Check if the solved board is the same as the current board
-        if self.board == self.solved:
+        # Check if the solved board is the same as the current locked board
+        if self.locked == self.solved:
             return True
         return False
